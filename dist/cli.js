@@ -14,8 +14,8 @@ async function main() {
     const { cliArgs, commandArgs } = splitArguments(process.argv);
     const program = new commander_1.Command();
     program
-        .name('alias-runner')
-        .description('Zero-touch local domain proxy runner')
+        .name('/alias')
+        .description('Zero-touch local domain proxy by @launchaddict')
         .option('-s, --script <name>', 'script key inside alias.commands')
         .option('-d, --domain <domain>', 'domain override (defaults to alias.domain)')
         .option('--proxy-port <port>', 'http proxy port override')
@@ -46,6 +46,7 @@ async function main() {
         throw new Error('No dev command provided. Append it after -- or set commands.<name>.command in package.json');
     }
     const [command, ...args] = commandParts;
+    (0, terminal_1.logCredit)();
     const context = {
         cwd,
         domain,

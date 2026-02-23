@@ -76,7 +76,7 @@ class ProxyService {
             server.listen(port, () => {
                 server.removeListener('error', reject);
                 const actualPort = extractPort(server) ?? port;
-                (0, terminal_1.logInfo)(`alias proxy listening on port ${actualPort}`);
+                (0, terminal_1.logInfo)(`proxy listening on port ${actualPort}`);
                 resolve(server);
             });
         });
@@ -89,7 +89,7 @@ class ProxyService {
         const route = this.routes.get(domain);
         if (!route) {
             res.statusCode = 502;
-            res.end(`alias-runner: no route configured for ${domain}`);
+            res.end(`/alias: no route configured for ${domain}`);
             return;
         }
         this.proxy.web(req, res, { target: route }, (error) => {
@@ -97,7 +97,7 @@ class ProxyService {
             if (!res.headersSent) {
                 res.statusCode = 502;
             }
-            res.end('alias-runner proxy error');
+            res.end('/alias proxy error');
         });
     }
     handleUpgrade(req, socket, head) {

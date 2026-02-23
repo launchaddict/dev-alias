@@ -27,7 +27,7 @@ async function runWithProxy(options) {
     });
     detector.onPort((port) => {
         proxy.upsertRoute(options.domain, `http://127.0.0.1:${port}`);
-        (0, terminal_1.logHighlight)(`alias: mapped ${options.https ? 'https' : 'http'}://${options.domain} -> http://localhost:${port}`);
+        (0, terminal_1.logHighlight)(`mapped ${options.https ? 'https' : 'http'}://${options.domain} -> http://localhost:${port}`);
     });
     const child = spawnProcess(options, detector);
     const exitPromise = waitForExit(child);
