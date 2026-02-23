@@ -1,0 +1,65 @@
+{
+  "name": "dev-alias",
+  "version": "0.1.0",
+  "description": "Zero-touch local domain proxy by @launchaddict",
+  "type": "commonjs",
+  "bin": {
+    "alias": "dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "main": "dist/cli.js",
+  "types": "dist/cli.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "ts-node src/cli.ts --",
+    "test": "jest",
+    "prepare": "npm run build"
+  },
+  "keywords": [
+    "dev",
+    "proxy",
+    "local-domain",
+    "developer-experience"
+  ],
+  "author": "",
+  "license": "MIT",
+  "homepage": "https://github.com/launchaddict/dev-alias#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/launchaddict/dev-alias.git"
+  },
+  "bugs": {
+    "url": "https://github.com/launchaddict/dev-alias/issues"
+  },
+  "dependencies": {
+    "commander": "^14.0.2",
+    "fs-extra": "^11.3.2",
+    "http-proxy": "^1.18.1",
+    "selfsigned": "^4.0.0",
+    "string-argv": "^0.3.2",
+    "sudo-prompt": "^9.2.1",
+    "tcp-port-used": "^1.0.2"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^11.0.4",
+    "@types/http-proxy": "^1.17.17",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^24.10.1",
+    "@types/selfsigned": "^2.0.4",
+    "@types/string-argv": "^0.1.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.5",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  },
+  "alias": {
+    "domain": "dev-runner.localhost",
+    "proxyPort": 8050,
+    "portScan": {
+      "start": 4100,
+      "end": 4200
+    }
+  }
+}
