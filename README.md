@@ -95,6 +95,21 @@ When you run `npm run dev`:
 
 Your team just runs `npm run dev` — no global installation needed.
 
+### Domain Options
+
+You can use any domain you like, but these special options resolve to localhost automatically:
+
+| Domain | Notes |
+|--------|-------|
+| `*.localhost` | Modern browsers (Chrome, Edge, Firefox, Safari) resolve these to 127.0.0.1 automatically. No `/etc/hosts` editing needed. **Recommended.** |
+| `*.lvh.me` | Always resolves to 127.0.0.1. Works on any device without hosts file changes. |
+| `*.localtest.me` | Same as lvh.me — resolves to 127.0.0.1. |
+| `*.test` / `*.dev` | Common choices, but require `/etc/hosts` entries (dev-alias handles this). Note: `.dev` is a real TLD owned by Google. |
+
+**Avoid `.local`:** The `.local` TLD is reserved for mDNS/Bonjour (multicast DNS) and can cause conflicts on macOS and Linux. Use `.localhost` instead.
+
+**Recommended:** Use `.localhost` domains like `myapp.localhost` — they work out of the box in modern browsers.
+
 ### Pre-Configured Commands
 
 Define commands in your config for cleaner scripts:
