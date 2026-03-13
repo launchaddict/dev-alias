@@ -1,17 +1,42 @@
 # dev-alias
 
-Zero-touch local domain proxy for local development. No configuration files, no manual hosts editing, no certificate management — just run your dev server and get a clean local domain with HTTPS.
+**Get HTTPS working locally in 10 seconds. No config, no certificate warnings, no `/etc/hosts` editing.**
 
-## What Problem Does This Solve?
+Zero-touch local domain proxy for local development. Just run your dev server and get a clean local domain with HTTPS. Handles certificate generation, host file updates, and proxying automatically.
 
-When developing locally, you often need:
+## The Problem
 
-- **A clean domain** instead of `localhost:3000` — essential for OAuth callbacks, webhooks, or testing subdomains
-- **HTTPS** for features like Service Workers, geolocation, or camera access
-- **Multiple projects** running simultaneously without port conflicts
-- **No browser security warnings** about self-signed certificates
+Developers spend countless hours fighting local development setup:
 
-dev-alias handles all of this automatically. It detects when your dev server starts, proxies it to a custom local domain, manages SSL certificates, and updates your `/etc/hosts` — all without manual intervention.
+```bash
+# The usual nightmare:
+localhost:3000  ❌ No OAuth (requires https)
+                ❌ No Service Workers (requires https)
+                ❌ No geolocation/camera (requires https)
+                ❌ No webhook testing (localhost won't work)
+                ❌ Certificate warnings in browser
+                ❌ Can't test subdomains
+
+# With dev-alias:
+https://app.localhost  ✅ HTTPS out of the box
+                       ✅ Works with OAuth
+                       ✅ Service Workers enabled
+                       ✅ Zero certificate warnings
+                       ✅ Can test subdomains
+                       ✅ Works for team (no setup)
+```
+
+## Installation
+
+### TL;DR for most projects:
+
+```bash
+npm install --save-dev dev-alias
+# Add one line to your package.json scripts
+# Change: "dev": "next dev"
+# To:     "dev": "alias -- next dev"
+# Done! Run npm run dev
+```
 
 ## Installation
 
@@ -23,10 +48,23 @@ Add as a dev dependency so your whole team uses it automatically:
 npm install --save-dev dev-alias
 ```
 
+Then modify your dev script in `package.json`:
+
+```json
+{
+  "scripts": {
+    "dev": "alias -- next dev"  // or your actual dev command
+  }
+}
+```
+
+Now `npm run dev` gives you `https://dev-runner.localhost` automatically.
+
 ### Global Installation
 
 ```bash
 npm install -g dev-alias
+alias -- npm run dev
 ```
 
 ### One-off Usage
@@ -34,6 +72,91 @@ npm install -g dev-alias
 ```bash
 npx dev-alias -- npm run dev
 ```
+
+---
+
+## Real-World Use Cases
+
+### 1. OAuth & Authentication Testing
+
+Testing OAuth providers (GitHub, Google, Auth0) that require HTTPS callbacks:
+
+```json
+{
+  "scripts": {
+    "dev": "alias -- npm run dev:server"
+  },
+  "alias": {
+    "domain": "myapp.localhost",
+    "https": true
+  }
+}
+```
+
+Configure your OAuth app with callback: `https://myapp.localhost/auth/callback`
+
+No more "localhost cannot use HTTPS" errors!
+
+### 2. Webhook Development (Stripe, Shopify, GitHub)
+
+Test webhooks locally without tunneling services like ngrok:
+
+```json
+{
+  "alias": {
+    "domain": "api.localhost",
+    "https": true
+  }
+}
+```
+
+Register your webhook URL as `https://api.localhost/webhooks/stripe` — dev-alias proxies it to your local server. Stripe won't complain about localhost!
+
+### 3. Service Workers & Progressive Web Apps
+
+Service Workers require HTTPS (and the right domain):
+
+```json
+{
+  "alias": {
+    "domain": "pwa.localhost",
+    "https": true
+  }
+}
+```
+
+Now your Service Workers work without HTTPS warnings.
+
+### 4. Subdomain Testing
+
+Test subdomain routing without editing `/etc/hosts`:
+
+```json
+{
+  "alias": {
+    "domain": "myapp.localhost"
+  }
+}
+```
+
+Access:
+- `https://myapp.localhost` → your app
+- `https://api.myapp.localhost` → same server (if configured)
+- `https://admin.myapp.localhost` → same server (if configured)
+
+### 5. Multiple Projects Simultaneously
+
+Run 10 projects at once without port conflicts:
+
+```bash
+# Project A
+npm run dev  # runs on https://app-a.localhost
+
+# Project B (in another terminal)
+npm run dev  # runs on https://app-b.localhost
+```
+
+Each gets its own domain. No more "port 3000 already in use"!
 
 ## Quick Start
 
@@ -231,6 +354,35 @@ Examples:
   alias --script dev -e NODE_ENV=staging
 ```
 
+## Why dev-alias?
+
+### vs. Manual `/etc/hosts` Editing
+- ❌ Manual: Edit hosts file, generate certificates, remember to clean up
+- ✅ dev-alias: Automatic + one command to undo
+
+### vs. Using `.local` Domains
+- ❌ `.local` uses mDNS (Bonjour) — unreliable on Linux, slow on macOS, conflicts with real mDNS services
+- ✅ `.localhost` is built-in to all modern browsers, no special setup
+
+### vs. ngrok / Cloudflare Tunnel
+- ❌ Exposes your local server to the internet (security risk)
+- ❌ Costs money or has rate limits
+- ❌ Creates public URLs (slower, less reliable for testing)
+- ✅ dev-alias is 100% local, free, instant
+
+### vs. Docker
+- ❌ Docker adds complexity, requires entire environment setup
+- ❌ Can't use your system node/npm installation
+- ❌ File mounting issues on Mac/Windows
+- ✅ dev-alias is one command, uses your existing setup
+
+### vs. Manually Configuring SSL
+- ❌ Self-signed certs cause browser warnings
+- ❌ Installing root certs is finicky on each machine
+- ✅ dev-alias auto-trusts certificates (no warnings)
+
+---
+
 ## Team Usage
 
 **No global installation required.** The best approach is to add `dev-alias` as a dev dependency:
@@ -282,6 +434,92 @@ npx dev-alias -- npm run dev
 ## Environment Variables
 
 - `DEBUG` — Enable verbose debug output
+
+## Troubleshooting
+
+### Certificate Warning in Browser
+
+**Issue:** "Your connection is not private" or similar warning
+
+**Solution:**
+This is normal for self-signed certificates. You can:
+1. Click "Advanced" → "Proceed anyway" (browser will remember)
+2. Or, trust the certificate permanently:
+   - Find the cert at `~/.dev-alias/`
+   - Install it in your browser/system's certificate store
+
+For most local development, just ignore the warning—browsers cache the decision.
+
+### Port Already in Use
+
+**Issue:** `Error: Port 80 already in use`
+
+**Solution:**
+Change the proxy port in your config:
+
+```json
+{
+  "alias": {
+    "proxyPort": 8080,
+    "domain": "myapp.localhost"
+  }
+}
+```
+
+Then access `https://myapp.localhost:8080`
+
+### `/etc/hosts` Not Updating
+
+**Issue:** Domain resolves to wrong IP or doesn't resolve
+
+**Solution:**
+1. Check that you're running with `sudo` permissions (needed for ports < 1024)
+2. Flush your DNS cache:
+   - **macOS:** `sudo dscacheutil -flushcache`
+   - **Linux:** `sudo systemctl restart systemd-resolved`
+3. Verify hosts entry: `cat /etc/hosts | grep localhost`
+
+### Dev Server Not Detected
+
+**Issue:** `Error: Could not detect port`
+
+**Solution:**
+Manually hint the port:
+
+```bash
+alias --target-port 3000 -- npm run dev
+```
+
+Or in config:
+
+```json
+{
+  "alias": {
+    "commands": {
+      "dev": {
+        "command": "npm run dev:server",
+        "targetPort": 3000
+      }
+    }
+  }
+}
+```
+
+### Can't Access Domain from Other Machines
+
+**Limitation:** `*.localhost` only works on the same machine. To access from other machines on your network, use `.lvh.me` or `.localtest.me`:
+
+```json
+{
+  "alias": {
+    "domain": "myapp.lvh.me"
+  }
+}
+```
+
+Then other machines can access `https://myapp.lvh.me` (which resolves to your IP).
+
+---
 
 ## Requirements
 

@@ -7,15 +7,69 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const commander_1 = require("commander");
 const path_1 = __importDefault(require("path"));
 const string_argv_1 = __importDefault(require("string-argv"));
+const fs_extra_1 = __importDefault(require("fs-extra"));
+const readline_1 = __importDefault(require("readline"));
 const config_1 = require("./config");
 const process_runner_1 = require("./process-runner");
 const terminal_1 = require("./terminal");
+async function promptUser(prompt) {
+    const rl = readline_1.default.createInterface({
+        input: process.stdin,
+        output: process.stdout
+    });
+    return new Promise((resolve) => {
+        rl.question(prompt, (answer) => {
+            rl.close();
+            resolve(answer.trim());
+        });
+    });
+}
+async function initializeConfig() {
+    const packagePath = path_1.default.join(process.cwd(), 'package.json');
+    if (!fs_extra_1.default.existsSync(packagePath)) {
+        throw new Error('No package.json found in current directory.');
+    }
+    const pkg = await fs_extra_1.default.readJson(packagePath);
+    console.log((0, terminal_1.colorize)('\n🚀 Welcome to dev-alias setup!\n', 'cyan'));
+    let domain = '';
+    while (!domain) {
+        const input = await promptUser('What domain would you like? (default: app.localhost) ');
+        domain = input || 'app.localhost';
+        if (!(0, config_1.isValidDomain)(domain)) {
+            console.log((0, terminal_1.colorize)('❌ Invalid domain. Use .localhost, .test, or .local domains.\n', 'red'));
+            domain = '';
+        }
+    }
+    const httpsInput = await promptUser('Enable HTTPS? (y/n, default: y) ');
+    const https = httpsInput.toLowerCase() !== 'n';
+    const config = {
+        domain: domain.toLowerCase(),
+        https
+    };
+    pkg.alias = { ...pkg.alias, ...config };
+    await fs_extra_1.default.writeJson(packagePath, pkg, { spaces: 2 });
+    console.log('\n' + (0, terminal_1.colorize)('✅ Configuration saved to package.json!', 'green'));
+    console.log((0, terminal_1.colorize)(`\nYour config:\n`, 'cyan'));
+    console.log(JSON.stringify(config, null, 2));
+    console.log((0, terminal_1.colorize)('\nNext steps:', 'cyan') +
+        `
+1. Update your dev script in package.json:
+   "dev": "alias -- npm run dev:server"  (or your actual dev command)
+
+2. Run your dev server:
+   npm run dev
+
+3. Visit: https://${domain}
+
+Happy developing! 🎉\n`);
+}
 async function main() {
     const { cliArgs, commandArgs } = splitArguments(process.argv);
     const program = new commander_1.Command();
     program
-        .name('/alias')
+        .name('alias')
         .description('Zero-touch local domain proxy by @launchaddict')
+        .option('--init', 'interactive setup wizard')
         .option('-s, --script <name>', 'script key inside alias.commands')
         .option('-d, --domain <domain>', 'domain override (defaults to alias.domain)')
         .option('--proxy-port <port>', 'http proxy port override')
@@ -28,6 +82,10 @@ async function main() {
         .option('-e, --env <pair...>', 'environment variables in KEY=VALUE format');
     program.parse(cliArgs);
     const options = program.opts();
+    if (options.init) {
+        await initializeConfig();
+        return;
+    }
     const { config, packagePath } = await (0, config_1.loadConfig)(process.cwd());
     const cwd = path_1.default.dirname(packagePath);
     const scriptName = options.script ?? process.env.npm_lifecycle_event ?? undefined;
