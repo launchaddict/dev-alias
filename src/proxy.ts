@@ -91,11 +91,13 @@ export class ProxyService {
     label: 'HTTP' | 'HTTPS'
   ): Promise<Server | https.Server> {
     const uniqueCandidates = Array.from(new Set(candidates));
+    let lastError: unknown;
     for (let index = 0; index < uniqueCandidates.length; index += 1) {
       const candidate = uniqueCandidates[index];
       try {
         return await this.listen(candidate, undefined, factory);
       } catch (error) {
+        lastError = error;
         const hasMoreOptions = index < uniqueCandidates.length - 1;
         if (isPortError(error) && hasMoreOptions) {
           const nextCandidate = uniqueCandidates[index + 1];
@@ -106,7 +108,7 @@ export class ProxyService {
         throw error;
       }
     }
-    throw new Error(`Could not bind ${label} proxy.`);
+    throw lastError instanceof Error ? lastError : new Error(`Could not bind ${label} proxy.`);
   }
 
   private async listen(

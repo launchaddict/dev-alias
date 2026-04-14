@@ -62,12 +62,14 @@ class ProxyService {
     }
     async listenWithFallback(candidates, factory, label) {
         const uniqueCandidates = Array.from(new Set(candidates));
+        let lastError;
         for (let index = 0; index < uniqueCandidates.length; index += 1) {
             const candidate = uniqueCandidates[index];
             try {
                 return await this.listen(candidate, undefined, factory);
             }
             catch (error) {
+                lastError = error;
                 const hasMoreOptions = index < uniqueCandidates.length - 1;
                 if (isPortError(error) && hasMoreOptions) {
                     const nextCandidate = uniqueCandidates[index + 1];
@@ -78,7 +80,7 @@ class ProxyService {
                 throw error;
             }
         }
-        throw new Error(`Could not bind ${label} proxy.`);
+        throw lastError instanceof Error ? lastError : new Error(`Could not bind ${label} proxy.`);
     }
     async listen(port, handler, factory) {
         const server = factory ? factory() : http_1.default.createServer(handler);
