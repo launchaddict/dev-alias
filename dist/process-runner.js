@@ -25,9 +25,13 @@ async function runWithProxy(options) {
         fallbackHttpsPort: options.https ? ((options.httpsPort ?? 443) === 443 ? 8443 : (options.httpsPort ?? 443) + 1) : undefined,
         httpsCredentials: httpsCredentials ? { key: httpsCredentials.key, cert: httpsCredentials.cert } : undefined
     });
+    const boundPorts = proxy.getBoundPorts();
     detector.onPort((port) => {
         proxy.upsertRoute(options.domain, `http://127.0.0.1:${port}`);
-        (0, terminal_1.logHighlight)(`mapped ${options.https ? 'https' : 'http'}://${options.domain} -> http://localhost:${port}`);
+        const protocol = options.https && boundPorts.https ? 'https' : 'http';
+        const publicPort = protocol === 'https' ? boundPorts.https : boundPorts.http;
+        const publicUrl = formatPublicUrl(protocol, options.domain, publicPort);
+        (0, terminal_1.logHighlight)(`mapped ${publicUrl} -> http://localhost:${port}`);
     });
     const child = spawnProcess(options, detector);
     const exitPromise = waitForExit(child);
@@ -39,6 +43,15 @@ async function runWithProxy(options) {
     finally {
         await cleanup();
     }
+}
+function formatPublicUrl(protocol, domain, port) {
+    if (!port) {
+        return `${protocol}://${domain}`;
+    }
+    if ((protocol === 'http' && port === 80) || (protocol === 'https' && port === 443)) {
+        return `${protocol}://${domain}`;
+    }
+    return `${protocol}://${domain}:${port}`;
 }
 function spawnProcess(options, detector) {
     const child = (0, child_process_1.spawn)(options.command, options.args, {

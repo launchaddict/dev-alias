@@ -42,32 +42,45 @@ class ProxyService {
         this.routes.delete(domain.toLowerCase());
     }
     async createHttpServer(port, fallback) {
-        try {
-            return (await this.listen(port, (req, res) => this.handleRequest(req, res)));
+        const candidates = [port];
+        if (fallback && fallback !== port) {
+            candidates.push(fallback);
         }
-        catch (error) {
-            if (fallback && fallback !== port && isPortError(error)) {
-                (0, terminal_1.logWarn)(`Port ${port} unavailable. Falling back to ${fallback}.`);
-                return (await this.listen(fallback, (req, res) => this.handleRequest(req, res)));
-            }
-            throw error;
-        }
+        candidates.push(0);
+        return (await this.listenWithFallback(candidates, () => http_1.default.createServer((req, res) => this.handleRequest(req, res)), 'HTTP'));
     }
     async createHttpsServer(options, port, fallback) {
-        const listener = () => https_1.default.createServer({
+        const candidates = [port];
+        if (fallback && fallback !== port) {
+            candidates.push(fallback);
+        }
+        candidates.push(0);
+        return (await this.listenWithFallback(candidates, () => https_1.default.createServer({
             key: options.httpsCredentials?.key,
             cert: options.httpsCredentials?.cert
-        }, (req, res) => this.handleRequest(req, res));
-        try {
-            return (await this.listen(port, undefined, listener));
-        }
-        catch (error) {
-            if (fallback && fallback !== port && isPortError(error)) {
-                (0, terminal_1.logWarn)(`HTTPS port ${port} unavailable. Falling back to ${fallback}.`);
-                return (await this.listen(fallback, undefined, listener));
+        }, (req, res) => this.handleRequest(req, res)), 'HTTPS'));
+    }
+    async listenWithFallback(candidates, factory, label) {
+        const uniqueCandidates = Array.from(new Set(candidates));
+        let lastError;
+        for (let index = 0; index < uniqueCandidates.length; index += 1) {
+            const candidate = uniqueCandidates[index];
+            try {
+                return await this.listen(candidate, undefined, factory);
             }
-            throw error;
+            catch (error) {
+                lastError = error;
+                const hasMoreOptions = index < uniqueCandidates.length - 1;
+                if (isPortError(error) && hasMoreOptions) {
+                    const nextCandidate = uniqueCandidates[index + 1];
+                    const nextPortLabel = nextCandidate === 0 ? 'random available port' : `${nextCandidate}`;
+                    (0, terminal_1.logWarn)(`${label} port ${candidate} unavailable. Falling back to ${nextPortLabel}.`);
+                    continue;
+                }
+                throw error;
+            }
         }
+        throw lastError instanceof Error ? lastError : new Error(`Could not bind ${label} proxy.`);
     }
     async listen(port, handler, factory) {
         const server = factory ? factory() : http_1.default.createServer(handler);
