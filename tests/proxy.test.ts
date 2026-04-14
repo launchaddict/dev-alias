@@ -52,4 +52,23 @@ describe('ProxyService', () => {
     await proxy.stop();
     await new Promise<void>((resolve) => target.close(() => resolve()));
   });
+
+  it('falls back to a random available port when configured ports are unavailable', async () => {
+    const blockerA = http.createServer();
+    const blockerB = http.createServer();
+    const occupiedA = await listen(blockerA);
+    const occupiedB = await listen(blockerB);
+
+    const proxy = new ProxyService();
+    await proxy.start({ httpPort: occupiedA, fallbackHttpPort: occupiedB });
+    const proxyPort = proxy.getBoundPorts().http;
+
+    expect(proxyPort).toBeDefined();
+    expect(proxyPort).not.toBe(occupiedA);
+    expect(proxyPort).not.toBe(occupiedB);
+
+    await proxy.stop();
+    await new Promise<void>((resolve) => blockerA.close(() => resolve()));
+    await new Promise<void>((resolve) => blockerB.close(() => resolve()));
+  });
 });

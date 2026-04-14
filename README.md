@@ -1,8 +1,8 @@
 # dev-alias
 
-**Get HTTPS working locally in 10 seconds. No config, no certificate warnings, no `/etc/hosts` editing.**
+**Get local domains and HTTPS working in seconds. No port juggling, no repetitive setup, no `/etc/hosts` guesswork.**
 
-Zero-touch local domain proxy for local development. Just run your dev server and get a clean local domain with HTTPS. Handles certificate generation, host file updates, and proxying automatically.
+Zero-touch local domain proxy for local development. Just run your dev server and get a clean local domain with HTTPS. Handles certificate generation, host file updates, and proxying automatically, including automatic proxy port fallback when common ports are already occupied.
 
 ## The Problem
 
@@ -25,6 +25,18 @@ https://app.localhost  ✅ HTTPS out of the box
                        ✅ Can test subdomains
                        ✅ Works for team (no setup)
 ```
+
+## Why This Is Important (Especially for Teams)
+
+`dev-alias` is not just a convenience tool; it removes a category of recurring local-environment failures:
+
+- **Fewer blocked developers:** new teammates avoid day-one setup friction.
+- **Stable onboarding:** everyone uses the same local domain workflow.
+- **Reliable HTTPS-first development:** OAuth, cookies, service workers, and callbacks are testable from day one.
+- **Less time lost to port conflicts:** the proxy can automatically fall back to available ports instead of forcing manual reconfiguration.
+- **Lower support burden:** fewer “works on my machine” incidents caused by host/cert/domain drift.
+
+For engineering leaders, this means faster onboarding, fewer interrupted dev cycles, and more predictable local testing behavior across the team.
 
 ## Installation
 
@@ -379,7 +391,7 @@ Examples:
 ### vs. Manually Configuring SSL
 - ❌ Self-signed certs cause browser warnings
 - ❌ Installing root certs is finicky on each machine
-- ✅ dev-alias auto-trusts certificates (no warnings)
+- ✅ dev-alias automatically generates certs and keeps SSL setup in one repeatable workflow
 
 ---
 

@@ -23,6 +23,7 @@ export declare class ProxyService {
     removeRoute(domain: string): void;
     private createHttpServer;
     private createHttpsServer;
+    private listenWithFallback;
     private listen;
     private closeServer;
     private handleRequest;
