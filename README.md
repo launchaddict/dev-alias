@@ -391,7 +391,7 @@ Examples:
 ### vs. Manually Configuring SSL
 - ❌ Self-signed certs cause browser warnings
 - ❌ Installing root certs is finicky on each machine
-- ✅ dev-alias automatically generates certs and keeps SSL setup in one repeatable workflow
+- ✅ dev-alias generates and reuses local cert files automatically, so teams avoid ad-hoc OpenSSL commands and one-off SSL setup drift
 
 ---
 
